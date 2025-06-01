@@ -85,17 +85,17 @@ def predict(data_bloc, k):
     
     k_v=calculate_kv_max(data_bloc.phi[k-1], alpha)
 
-    if k == 0:
         # Initial prediction - use first sample value or zero
+    if k == 0:
         data_bloc.y_hat[k] = data_bloc.y_recreated[0] if k == 0 else 0
-    else:
     
         # Main prediction equation:
         # ŷ(k) = θ(k-1)•φ(k-1) - k_v * eq(k-1)
-        data_bloc.y_hat[k] = np.dot(data_bloc.theta[k-1], data_bloc.phi[k-1]) - k_v * data_bloc.eq[k-1]
     #if (k > 0):
     #    data_bloc.phi[k] = data_bloc.phi[k-1]
     # TODO: calculate 'hat y(k)' based on (k-1) parameters
+    else:
+        data_bloc.y_hat[k] = np.dot(data_bloc.theta[k-1], data_bloc.phi[k-1]) - k_v * data_bloc.eq[k-1]
     # data_block.y_hat[k] = ...
     # if (k==1):
         # data_block.y_hat[k] = ...
