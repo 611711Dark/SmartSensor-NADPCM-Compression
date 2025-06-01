@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 import lab1_ndpcm_library
 
 ### General parameters
-n_bits = 16;
+n_bits = 12;
 n = 100; # number of iterations
 h_depth = 3; ## for now hardcode size of history to last 3 values
 
@@ -84,6 +84,6 @@ plt.subplot(3, 1, 3)
 plt.plot(tt, rx_data.eq, label="quantized error")
 plt.plot(tt, e, label="true error")
 plt.legend()
-plt.savefig("lab1_result.png")
+plt.savefig(f"lab1_bits_{n_bits}_result.png")
 
 plt.show()

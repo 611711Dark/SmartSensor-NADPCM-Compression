@@ -5,10 +5,11 @@ from matplotlib import pyplot as plt
 from collections import namedtuple
 from lab1_library import quantize
 from lab1_ndpcm_library import init, prepare_params_for_prediction, predict, calculate_error, reconstruct
+import matplotlib.ticker as mticker
 
 def run_nadpcm_experiment():
     
-    n_bits_list = [8, 9, 10, 11, 12, 13, 14, 15, 16]  
+    n_bits_list = [10, 12, 14, 16]  
     n = 100  
     h_depth = 3  
     
@@ -17,7 +18,7 @@ def run_nadpcm_experiment():
     
     # 测试不同类型的信号
     signals = {
-        'slow_sine': (np.sin(x) + 1) * 1000,  # 慢变正弦
+        'slow_sine': (np.sin(2*x) + 1) * 1000,  # 慢变正弦
         'fast_sine': (np.sin(5*x) + 1) * 1000,  # 快变正弦
         'very_fast_sine': (np.sin(10*x) + 1) * 1000,  # 很快变正弦
     }
@@ -75,61 +76,210 @@ def run_nadpcm_experiment():
     return results
 
 def plot_results(results):
-    """绘制实验结果"""
-    
-    # 为每个信号类型创建图表
+    """绘制实验结果，显示所有比特数的重建信号和误差，使用科学计数法显示关键指标"""
+
     for signal_name, signal_results in results.items():
-        fig, axes = plt.subplots(2, 2, figsize=(15, 10))
-        fig.suptitle(f'NADPCM Performance - {signal_name}', fontsize=16)
+        fig = plt.figure(figsize=(18, 14))
+        gs = fig.add_gridspec(3, 2)
+        fig.suptitle(f'NADPCM Performance - {signal_name}', fontsize=20, y=0.98)
+
+        # 获取所有可用比特数（排序）
+        n_bits_list = sorted(signal_results.keys())
+
+        # ==================== 子图1: 原始信号和所有比特数的重建信号 ====================
+        ax1 = fig.add_subplot(gs[0, :])
+
+        # 获取原始信号（使用第一个可用的比特数）
+        first_bits = n_bits_list[0]
+        original_signal = signal_results[first_bits]['original_signal']
+        n = len(original_signal)
+        t = np.arange(n)
+
+        # 绘制原始信号
+        ax1.plot(t, original_signal, 'k-', label='Original', linewidth=3, alpha=0.8)
+
+        # 绘制所有比特数的重建信号
+        colors = plt.cm.viridis(np.linspace(0, 1, len(n_bits_list)))
+        for i, bits in enumerate(n_bits_list):
+            reconstructed = signal_results[bits]['reconstructed_signal']
+            ax1.plot(t, reconstructed, '--',
+                     color=colors[i],
+                     linewidth=1.5,
+                     alpha=0.7,
+                     label=f'Recon {bits}-bit')
+
+        # 设置Y轴范围基于原始信号振幅
+        y_min = np.min(original_signal)
+        y_max = np.max(original_signal)
+        y_padding = (y_max - y_min) * 0.15  # 15%的填充
+        ax1.set_ylim([y_min - y_padding, y_max + y_padding])
+
+        ax1.set_xlabel('Sample Index', fontsize=14)
+        ax1.set_ylabel('Amplitude', fontsize=14)
+        ax1.set_title('Signal Reconstruction (All Bit Depths)', fontsize=16)
+        ax1.legend(loc='upper right', fontsize=11, ncol=2)
+        ax1.grid(True, alpha=0.3)
+
+        # ==================== 子图2: 所有比特数的重建误差 ====================
+        ax2 = fig.add_subplot(gs[1, :])
+
+        # 计算并绘制所有比特数的重建误差
+        max_error = 0
+        min_error = 0
+
+        for i, bits in enumerate(n_bits_list):
+            reconstructed = signal_results[bits]['reconstructed_signal']
+            reconstruction_error = reconstructed - original_signal
+            ax2.plot(t, reconstruction_error,
+                     color=colors[i],
+                     linewidth=1.2,
+                     alpha=0.8,
+                     label=f'Error {bits}-bit')
+
+            # 更新最大最小误差值
+            current_max = np.max(reconstruction_error)
+            current_min = np.min(reconstruction_error)
+            if current_max > max_error:
+                max_error = current_max
+            if current_min < min_error:
+                min_error = current_min
         
-        # 子图1: 原始信号vs重构信号 (使用8bit作为示例)
-        if 8 in signal_results:
-            ax1 = axes[0, 0]
-            n = len(signal_results[8]['original_signal'])
-            t = np.arange(n)
-            ax1.plot(t, signal_results[8]['original_signal'], 'b-', label='Original', linewidth=2)
-            ax1.plot(t, signal_results[8]['reconstructed_signal'], 'r--', label='Reconstructed (8-bit)', linewidth=1)
-            ax1.set_xlabel('Sample')
-            ax1.set_ylabel('Amplitude')
-            ax1.set_title('Signal Reconstruction (8-bit)')
-            ax1.legend()
-            ax1.grid(True)
-        
-        # 子图2: 重构误差
-        if 8 in signal_results:
-            ax2 = axes[0, 1]
-            reconstruction_error = signal_results[8]['reconstructed_signal'] - signal_results[8]['original_signal']
-            ax2.plot(t, reconstruction_error, 'g-', linewidth=1)
-            ax2.set_xlabel('Sample')
-            ax2.set_ylabel('Error')
-            ax2.set_title('Reconstruction Error (8-bit)')
-            ax2.grid(True)
-        
-        # 子图3: 压缩比vs失真度
-        ax3 = axes[1, 0]
-        n_bits_list = list(signal_results.keys())
+        # 设置Y轴范围基于原始信号振幅
+        y_min = np.min(original_signal)
+        y_max = np.max(original_signal)
+        y_padding = (y_max - y_min) * 0.15  # 15%的填充
+        ax2.set_ylim([-y_max-y_min-y_padding, y_max + y_min+y_padding])
+
+        ax2.set_xlabel('Sample Index', fontsize=14)
+        ax2.set_ylabel('Error Magnitude', fontsize=14)
+        ax2.set_title('Reconstruction Errors (All Bit Depths)', fontsize=16)
+        ax2.legend(loc='upper right', fontsize=11, ncol=2)
+        ax2.grid(True, alpha=0.3)
+
+        # ==================== 子图3: 压缩比vs失真度 ====================
+        ax3 = fig.add_subplot(gs[2, 0])
         compression_ratios = [signal_results[nb]['compression_ratio'] for nb in n_bits_list]
         distortions = [signal_results[nb]['distortion'] for nb in n_bits_list]
-        
-        ax3.plot(compression_ratios, distortions, 'o-', linewidth=2, markersize=8)
+
+        # 验证数据一致性
+        if len(compression_ratios) != len(distortions) or len(compression_ratios) != len(n_bits_list):
+            print(f"警告: {signal_name} 的数据长度不一致")
+            continue
+
+        # 动态判断是否需要科学计数法
+        max_distortion = max(distortions)
+        min_distortion = min(distortions)
+        distortion_range = max_distortion - min_distortion
+
+        # 创建主Y轴
+        ax3.set_xlabel('Compression Ratio', fontsize=14)
+        ax3.set_ylabel('Distortion', fontsize=14, color='b')
+        ax3.set_title('Compression Ratio vs Distortion', fontsize=16)
+
+        # 绘制失真度
+        line1 = ax3.plot(n_bits_list, distortions, 'bo-', linewidth=2, markersize=8,
+                         label='Distortion')
+
+        # 设置Y轴范围
+        if distortion_range > 0:
+            ax3.set_ylim([min_distortion - distortion_range*0.1, max_distortion + distortion_range*0.1])
+
+        # 添加压缩比作为次Y轴
+        ax3b = ax3.twinx()
+        ax3b.set_ylabel('Compression Ratio', fontsize=14, color='r')
+        line2 = ax3b.plot(n_bits_list, compression_ratios, 'rs-', linewidth=2, markersize=8,
+                          label='Compression Ratio')
+
+        # 合并图例
+        lines = line1 + line2
+        labels = [l.get_label() for l in lines]
+        ax3.legend(lines, labels, loc='best', fontsize=10)
+
+        # 添加数据点标签
         for i, nb in enumerate(n_bits_list):
-            ax3.annotate(f'{nb}-bit', (compression_ratios[i], distortions[i]), 
-                        xytext=(5, 5), textcoords='offset points')
-        ax3.set_xlabel('Compression Ratio')
-        ax3.set_ylabel('Distortion (%)')
-        ax3.set_title('Compression Ratio vs Distortion')
-        ax3.grid(True)
-        
-        # 子图4: 平均误差vs编码位数
-        ax4 = axes[1, 1]
+            # 使用科学计数法显示失真度
+            dist_label = f'D:{distortions[i]:.2e}' if distortions[i] != 0 else '0'
+            comp_label = f'C:{compression_ratios[i]:.2f}'
+
+            ax3.annotate(f'{dist_label}\n{comp_label}',
+                         (nb, distortions[i]),
+                         xytext=(0, 15),
+                         textcoords='offset points',
+                         ha='center',
+                         fontsize=9,
+                         bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.8))
+
+        ax3.grid(True, alpha=0.3)
+
+        # 根据需要设置科学计数法
+        if max_distortion > 1000 or min_distortion < 0.001:
+            ax3.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+            ax3.yaxis.major.formatter.set_powerlimits((0, 0))
+
+        # ==================== 子图4: 平均误差vs编码位数 ====================
+        ax4 = fig.add_subplot(gs[2, 1])
         avg_errors = [signal_results[nb]['avg_error'] for nb in n_bits_list]
-        ax4.plot(n_bits_list, avg_errors, 's-', linewidth=2, markersize=8, color='orange')
-        ax4.set_xlabel('Number of Bits')
-        ax4.set_ylabel('Average Error')
-        ax4.set_title('Average Error vs Encoding Bits')
-        ax4.grid(True)
-        
-        plt.tight_layout()
+
+        # 验证数据一致性
+        if len(avg_errors) != len(n_bits_list):
+            print(f"警告: {signal_name} 的平均误差数据长度不一致")
+            continue
+
+        # 动态判断是否需要科学计数法
+        max_avg_error = max(avg_errors)
+        min_avg_error = min(avg_errors)
+        error_range = max_avg_error - min_avg_error
+
+        # 创建散点图
+        scatter = ax4.scatter(n_bits_list, avg_errors, c=n_bits_list,
+                             cmap='viridis', s=150, alpha=0.8)
+
+        # 添加颜色条
+        cbar = fig.colorbar(scatter, ax=ax4)
+        cbar.set_label('Encoding Bits', fontsize=12)
+
+        # 添加数据点标签
+        for i, nb in enumerate(n_bits_list):
+            # 根据数值大小选择合适的显示格式
+            if abs(avg_errors[i]) > 1000 or abs(avg_errors[i]) < 0.001:
+                label = f'{avg_errors[i]:.2e}'
+            else:
+                label = f'{avg_errors[i]:.6f}'
+
+            ax4.annotate(label,
+                         (nb, avg_errors[i]),
+                         xytext=(0, 12),
+                         textcoords='offset points',
+                         ha='center',
+                         fontsize=10,
+                         bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.8))
+
+        ax4.set_xlabel('Number of Encoding Bits', fontsize=14)
+        ax4.set_ylabel('Average Error', fontsize=14)
+        ax4.set_title('Average Error vs Encoding Bits', fontsize=16)
+        ax4.grid(True, alpha=0.3)
+
+        # 设置Y轴范围
+        if error_range > 0:
+            ax4.set_ylim([min_avg_error - error_range*0.15, max_avg_error + error_range*0.15])
+
+        # 根据需要设置科学计数法
+        if max_avg_error > 1000 or min_avg_error < 0.001:
+            ax4.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+            ax4.yaxis.major.formatter.set_powerlimits((0, 0))
+
+        # 添加整体统计信息
+        stats_text = (
+            f"Statistics for {signal_name}:\n"
+            f"Distortion Range: {min_distortion:.2e} - {max_distortion:.2e}\n"
+            f"Avg Error Range: {min_avg_error:.2e} - {max_avg_error:.2e}\n"
+            f"Compression Ratios: {min(compression_ratios):.2f} - {max(compression_ratios):.2f}"
+        )
+        fig.text(0.5, 0.01, stats_text, fontsize=12, ha='center',
+                 bbox=dict(facecolor='white', alpha=0.8))
+
+        # 调整布局并保存
+        plt.tight_layout(rect=[0, 0.03, 1, 0.98])  # 为总标题和统计信息留空间
         plt.savefig(f'nadpcm_results_{signal_name}.png', dpi=300, bbox_inches='tight')
         plt.show()
 
@@ -152,7 +302,7 @@ def print_performance_table(results):
         print(f"{'Bits':<6} {'Compression':<12} {'Avg Error':<12} {'Max Error':<12} {'Distortion':<12}")
         print(f"{'':6} {'Ratio':<12} {'':12} {'':12} {'(%)':<12}")
         print("-" * 60)
-        
+
         for n_bits in sorted(signal_results.keys()):
             result = signal_results[n_bits]
             # 使用智能格式化处理大数值
