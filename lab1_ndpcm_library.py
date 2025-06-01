@@ -35,8 +35,8 @@ def init(n, h_depth, n_bits):
         np.zeros(n), 
         np.zeros(n)
     )
-    data_block.phi[0] = np.array([0, 0, 0])
-    data_block.theta[0] = np.array([0, 0, 0])
+    data_block.phi[0] = np.zeros(h_depth)
+    data_block.theta[0] = np.zeros(h_depth)
     data_block.y_recreated[0] = 0
     ### Modify initial value for any component, parameter:
     # ...
@@ -45,7 +45,7 @@ def init(n, h_depth, n_bits):
 def calculate_alpha_max(phi):
     phi_norm_sq = np.dot(phi, phi)
     if phi_norm_sq < 1e-10:
-        result = 1.0  
+        result = 0.002  
     else:
         result = 1 / phi_norm_sq
     return result
@@ -61,41 +61,25 @@ def calculate_kv_max(phi, alpha_):
     return kv_max
 
 def prepare_params_for_prediction(data_bloc, k):
-    alpha=calculate_alpha_max(data_bloc.phi[k])
     # Update weights for next round (k) based on previous k-1, k-2,...
     # TODO: for first iteration INITIALIZE 'phi' and 'theta'
     if (k == 1):
-        alpha=0.002
-        data_bloc.phi[0] = np.array([0, 0, 0])
-        data_bloc.theta[0] = np.array([0, 0, 0])
-        return
-    if (k == 2):
-        data_bloc.phi[1] = np.array([data_bloc.y_recreated[1], data_bloc.y_recreated[0], 0])
-        alpha=calculate_alpha_max(data_bloc.phi[1])
-        data_bloc.theta[1] = data_bloc.theta[0]+alpha*data_bloc.eq[1]*data_bloc.phi[0]
-        return
-    if (k == 3):
-        data_bloc.phi[2] = np.array([data_bloc.y_recreated[2], data_bloc.y_recreated[1], data_bloc.y_recreated[0]])
-        alpha=calculate_alpha_max(data_bloc.phi[2])
-        data_bloc.theta[2] = data_bloc.theta[1]+alpha*data_bloc.eq[2]*data_bloc.phi[1]
+        data_bloc.phi[0] = np.zeros(data_bloc.h_depth)
+        data_bloc.theta[0] = np.zeros(data_bloc.h_depth)
         return
     
     # TODO: Fill 'phi' history for 'h_depth' last elements
-    data_bloc.phi[k-1] = np.array([
-        data_bloc.y_recreated[k-1], ## Add last recreated value (y(k-1)
-        data_bloc.y_recreated[k-2], ## Copy shifted from previous history (y(k-2))
-        data_bloc.y_recreated[k-3]
-        ])
-    alpha=calculate_alpha_max(data_bloc.phi[k-1])
+    for i in range(0, data_bloc.h_depth-1):
+        data_bloc.phi[k-1][i] = data_bloc.y_recreated[k-i-1]
+
+    alpha = calculate_alpha_max(data_bloc.phi[k-1])
     # print("e=", data_bloc.eq[k])
     # print("eT=", data_bloc.eq[k].transpose())
     # TODO: Update weights/coefficients 'theta'
-    
-    #data_bloc.theta[k-1] = np.clip(data_bloc.theta[k-2] + alpha * data_bloc.eq[k-1] * data_bloc.phi[k-2],-1.0, 1.0)
-    data_bloc.theta[k-1] = data_bloc.theta[k-2] + alpha * data_bloc.eq[k-1] * data_bloc.phi[k-2]
-    
-    return
 
+    data_bloc.theta[k-1] = data_bloc.theta[k-2] + alpha * data_bloc.eq[k-1] * data_bloc.phi[k-2]
+
+    return
 
 def predict(data_bloc, k):
     
