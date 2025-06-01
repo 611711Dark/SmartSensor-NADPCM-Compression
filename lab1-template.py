@@ -86,3 +86,25 @@ plt.legend()
 plt.savefig("lab1.png")
 
 plt.show()
+
+# Calculate distortion (percentage error)
+distortion = np.abs((rx_data.y_recreated - f) / f) * 100
+average_distortion = np.mean(distortion)
+print(f"Average Distortion: {average_distortion:.2f}%")
+
+# Calculate compression ratio
+original_bits = 16 * n  # Assuming original data is 16-bit ADC values
+compressed_bits = n_bits * n
+compression_ratio = original_bits / compressed_bits
+print(f"Compression Ratio: {compression_ratio:.2f}:1 (Original: {original_bits} bits, Compressed: {compressed_bits} bits)")
+
+# Add distortion plot
+plt.figure()
+plt.plot(tt, distortion, label="Distortion (%)")
+plt.xlabel("Iteration")
+plt.ylabel("Distortion (%)")
+plt.title("Reconstruction Distortion")
+plt.legend()
+plt.grid(True)
+plt.savefig("distortion.png")
+plt.show()

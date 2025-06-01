@@ -51,12 +51,10 @@ def calculate_alpha_max(phi):
     return result
 
 def calculate_kv_max(phi, alpha_):
-    """直接计算 kv 的上界"""
     phi_norm_sq = np.dot(phi, phi)
     
-    # 检查计算是否有效
     stability_term = 1 - alpha_ * phi_norm_sq
-    if stability_term <= 1e-10:  # 添加小的阈值防止数值不稳定
+    if stability_term <= 1e-10:  
         stability_term = 1e-10
     
     kv_max = np.sqrt(stability_term)
@@ -91,14 +89,11 @@ def prepare_params_for_prediction(data_bloc, k):
     alpha=calculate_alpha_max(data_bloc.phi[k-1])
     # print("e=", data_bloc.eq[k])
     # print("eT=", data_bloc.eq[k].transpose())
-    print(f"phi_{k-3}=", data_bloc.phi[k-3])
-    print(f"y_recreated_{k-3}=", data_bloc.y_recreated[k-3])
     # TODO: Update weights/coefficients 'theta'
     
     #data_bloc.theta[k-1] = np.clip(data_bloc.theta[k-2] + alpha * data_bloc.eq[k-1] * data_bloc.phi[k-2],-1.0, 1.0)
     data_bloc.theta[k-1] = data_bloc.theta[k-2] + alpha * data_bloc.eq[k-1] * data_bloc.phi[k-2]
     
-    print(f"pre_theta_{k-1}=", data_bloc.theta[k-1])
     return
 
 
@@ -114,7 +109,6 @@ def predict(data_bloc, k):
         # Main prediction equation:
         # ŷ(k) = θ(k-1)•φ(k-1) - k_v * eq(k-1)
         data_bloc.y_hat[k] = np.dot(data_bloc.theta[k-1], data_bloc.phi[k-1]) - k_v * data_bloc.eq[k-1]
-        print(f'theta_{k-1}=',data_bloc.theta[k-1])
     #if (k > 0):
     #    data_bloc.phi[k] = data_bloc.phi[k-1]
     # TODO: calculate 'hat y(k)' based on (k-1) parameters
@@ -135,6 +129,4 @@ def calculate_error(data_block, k, real_y):
 
 def reconstruct(data_block, k):
     data_block.y_recreated[k] = data_block.y_hat[k] + data_block.eq[k]
-    print(f"data_block.y_hat[{k}]=", data_block.y_hat[k])
-    print("data_block.eq[{k}]=", data_block.eq[k])
     return data_block.y_recreated[k]
