@@ -84,6 +84,6 @@ plt.subplot(3, 1, 3)
 plt.plot(tt, rx_data.eq, label="quantized error")
 plt.plot(tt, e, label="true error")
 plt.legend()
-plt.savefig("lab1.png")
+plt.savefig("lab1_result.png")
 
 plt.show()
