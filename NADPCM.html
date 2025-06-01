@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NADPCM算法原理与实现</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --gray: #95a5a6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: linear-gradient(120deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-radius: 50px;
+            padding: 5px;
+            margin: 1.5rem 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px 10px;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: var(--secondary);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .tab:hover:not(.active) {
+            background: rgba(52, 152, 219, 0.1);
+        }
+        
+        .content-section {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h2 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--secondary);
+        }
+        
+        h3 {
+            color: var(--secondary);
+            margin: 1.5rem 0 1rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+        }
+        
+        .formula-card {
+            background: #f8f9fa;
+            border-left: 4px solid var(--secondary);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .math {
+            font-size: 1.1rem;
+            padding: 10px 0;
+            display: block;
+            text-align: center;
+        }
+        
+        .symbol-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        
+        .symbol-table th {
+            background: var(--secondary);
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+        }
+        
+        .symbol-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .symbol-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .comparison {
+            display: flex;
+            gap: 20px;
+            margin: 2rem 0;
+        }
+        
+        .comparison-box {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-top: 4px solid var(--secondary);
+        }
+        
+        .comparison-box h4 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .comparison-box ul {
+            padding-left: 20px;
+        }
+        
+        .comparison-box li {
+            margin-bottom: 8px;
+        }
+        
+        .algorithm-steps {
+            counter-reset: step-counter;
+        }
+        
+        .step {
+            position: relative;
+            padding-left: 50px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .step:before {
+            counter-increment: step-counter;
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 36px;
+            height: 36px;
+            background: var(--secondary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 2rem 0;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-top: 4px solid var(--accent);
+        }
+        
+        .metric-card h4 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .metric-card h4 i {
+            margin-right: 10px;
+            color: var(--accent);
+        }
+        
+        .metric-card p {
+            color: var(--gray);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .comparison {
+                flex-direction: column;
+            }
+            
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1 0 45%;
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>非线性自适应脉冲编码调制(NADPCM)算法</h1>
+            <p class="subtitle">用于无线传感器网络的高效数据压缩技术</p>
+        </header>
+        
+        <div class="nav-tabs">
+            <div class="tab active" data-target="overview">算法概述</div>
+            <div class="tab" data-target="principles">核心原理</div>
+            <div class="tab" data-target="architecture">系统架构</div>
+            <div class="tab" data-target="math">数学模型</div>
+            <div class="tab" data-target="implementation">算法实现</div>
+            <div class="tab" data-target="performance">性能分析</div>
+        </div>
+        
+        <!-- Overview Section -->
+        <section id="overview" class="content-section active">
+            <h2>NADPCM算法概述</h2>
+            
+            <p>非线性自适应脉冲编码调制(NADPCM)是一种专为无线传感器网络设计的高效数据压缩技术。它通过自适应预测和误差量化，显著减少传感器数据传输量，同时保持可接受的重建精度。</p>
+            
+            <div class="formula-card">
+                <p class="math">\(\text{核心思想：} \hat{y}(k) = f(\theta(k-1), \phi(k-1)) + Q(e(k))\)</p>
+            </div>
+            
+            <h3>NADPCM的核心优势</h3>
+            
+            <div class="comparison">
+                <div class="comparison-box">
+                    <h4>传统PCM</h4>
+                    <ul>
+                        <li>直接量化原始信号</li>
+                        <li>高比特率（通常16位/样本）</li>
+                        <li>无压缩，无自适应</li>
+                        <li>对动态信号效率低</li>
+                        <li>计算简单但能耗高</li>
+                    </ul>
+                </div>
+                
+                <div class="comparison-box">
+                    <h4>NADPCM</h4>
+                    <ul>
+                        <li>量化预测误差信号</li>
+                        <li>低比特率（4-12位/样本）</li>
+                        <li>自适应参数调整</li>
+                        <li>对动态信号高效</li>
+                        <li>中等计算复杂度，低传输能耗</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>应用场景</h3>
+            <p>NADPCM特别适用于资源受限的无线传感器网络：</p>
+            <ul>
+                <li>环境监测（温度、湿度、光照等）</li>
+                <li>工业传感器网络（振动、压力监测）</li>
+                <li>医疗健康监测（心率、血压）</li>
+                <li>地理物理监测（地震、水位）</li>
+                <li>音频传感器网络</li>
+            </ul>
+        </section>
+        
+        <!-- Principles Section -->
+        <section id="principles" class="content-section">
+            <h2>核心原理</h2>
+            
+            <p>NADPCM通过自适应预测和误差量化实现高效压缩：</p>
+            
+            <div class="algorithm-steps">
+                <div class="step">
+                    <h3>预测器</h3>
+                    <p>基于历史数据和自适应参数生成当前样本的预测值：</p>
+                    <div class="formula-card">
+                        <p class="math">\(\hat{y}(k) = \theta^T(k-1) \phi(k-1) - k_v e_q(k-1)\)</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <h3>误差计算</h3>
+                    <p>计算实际值与预测值之间的误差：</p>
+                    <div class="formula-card">
+                        <p class="math">\(e(k) = y(k) - \hat{y}(k)\)</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <h3>误差量化</h3>
+                    <p>对误差信号进行量化，减少传输数据量：</p>
+                    <div class="formula-card">
+                        <p class="math">\(e_q(k) = Q(e(k))\)</p>
+                        <p>其中 \(Q\) 是量化函数，使用 \(n\) 位精度</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <h3>参数自适应</h3>
+                    <p>根据量化误差更新预测参数：</p>
+                    <div class="formula-card">
+                        <p class="math">\(\hat{\theta}(k) = \hat{\theta}(k-1) + \alpha \phi(k-1) e_q(k)\)</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <h3>信号重建</h3>
+                    <p>接收端使用量化误差重建原始信号：</p>
+                    <div class="formula-card">
+                        <p class="math">\(\bar{y}(k) = \hat{y}_R(k) + \bar{e}(k)\)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Architecture Section -->
+        <section id="architecture" class="content-section">
+            <h2>系统架构</h2>
+            
+            <h3>NADPCM系统框图</h3>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                <div style="display: inline-block; text-align: left; padding: 20px;">
+                    <div style="margin-bottom: 15px; padding: 10px; background: #e3f2fd; border-radius: 5px;">
+                        <strong>发送端</strong>
+                        <div style="margin-left: 20px;">
+                            <div>传感器输入 → 预测器 → 误差计算 → 量化器</div>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 15px 0; position: relative;">
+                        <div style="height: 2px; background: #3498db; position: absolute; top: 50%; left: 0; right: 0; z-index: 1;"></div>
+                        <div style="display: inline-block; background: white; padding: 0 15px; position: relative; z-index: 2;">
+                            传输通道（仅量化误差）
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 15px; padding: 10px; background: #e8f5e9; border-radius: 5px;">
+                        <strong>接收端</strong>
+                        <div style="margin-left: 20px;">
+                            <div>预测器 → 误差输入 → 信号重建</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>关键组件</h3>
+            
+            <div class="performance-metrics">
+                <div class="metric-card">
+                    <h4><i>➊</i> 预测器</h4>
+                    <p>基于历史数据和自适应参数生成当前样本的预测值。使用线性回归模型结合自适应权重。</p>
+                </div>
+                
+                <div class="metric-card">
+                    <h4><i>➋</i> 量化器</h4>
+                    <p>将预测误差映射到离散值，显著减少传输数据量。支持4-16位可配置精度。</p>
+                </div>
+                
+                <div class="metric-card">
+                    <h4><i>➌</i> 自适应引擎</h4>
+                    <p>根据量化误差动态调整预测参数，优化对信号变化的跟踪能力。</p>
+                </div>
+                
+                <div class="metric-card">
+                    <h4><i>➍</i> 重建模块</h4>
+                    <p>在接收端基于预测值和量化误差重建原始信号，确保数据完整性。</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Math Section -->
+        <section id="math" class="content-section">
+            <h2>数学模型</h2>
+            
+            <h3>发送端方程</h3>
+            
+            <div class="formula-card">
+                <p class="math">\(\hat{y}_T(k+1) = \hat{\theta}_T(k)\theta_T(k) - k_v e(k)\)</p>
+                <p class="math">\(e(k+1) = y(k+1) - \hat{y}_T(k+1)\)</p>
+                <p class="math">\(\hat{\theta}_T(k+1) = \hat{\theta}_T(k) + \alpha \theta_T(k) e^T(k+1)\)</p>
+                <p class="math">\(\bar{e}(k) = Q(e(k)) = e(k) + \epsilon_q\)</p>
+            </div>
+            
+            <h3>接收端方程</h3>
+            
+            <div class="formula-card">
+                <p class="math">\(\hat{y}_R(k+1) = \hat{\theta}_R(k)\theta_R(k) - k_v e_R(k)\)</p>
+                <p class="math">\(e_R(k+1) = \bar{y}(k+1) - \hat{y}_R(k+1) = \bar{e}(k+1)\)</p>
+                <p class="math">\(\hat{\theta}_R(k+1) = \hat{\theta}_R(k) + \alpha \theta_R(k) e_R^T(k+1)\)</p>
+                <p class="math">\(\bar{y}(k+1) = \hat{y}_R(k+1) + \bar{e}(k+1)\)</p>
+            </div>
+            
+            <h3>性能指标</h3>
+            
+            <div class="formula-card">
+                <p class="math">\(\text{失真度} = \left| \frac{y(k) - \bar{y}(k)}{y(k)} \right| \times 100\%\)</p>
+                <p class="math">\(\text{压缩比} = \frac{\text{原始数据总比特数}}{\text{传输数据总比特数}}\)</p>
+                <p class="math">\(\text{能量节省} = \left(1 - \frac{\text{压缩后比特数}}{\text{原始比特数}}\right) \times 100\%\)</p>
+            </div>
+            
+            <h3>关键符号说明</h3>
+            
+            <table class="symbol-table">
+                <thead>
+                    <tr>
+                        <th>符号</th>
+                        <th>含义</th>
+                        <th>说明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>\(y(k)\)</td>
+                        <td>原始信号</td>
+                        <td>k时刻传感器原始采样值</td>
+                    </tr>
+                    <tr>
+                        <td>\(\hat{y}(k)\)</td>
+                        <td>预测信号</td>
+                        <td>基于历史数据的预测值</td>
+                    </tr>
+                    <tr>
+                        <td>\(\bar{y}(k)\)</td>
+                        <td>重建信号</td>
+                        <td>接收端重建的信号值</td>
+                    </tr>
+                    <tr>
+                        <td>\(e(k)\)</td>
+                        <td>预测误差</td>
+                        <td>原始值与预测值之差</td>
+                    </tr>
+                    <tr>
+                        <td>\(e_q(k)\)</td>
+                        <td>量化误差</td>
+                        <td>量化后的误差值（传输）</td>
+                    </tr>
+                    <tr>
+                        <td>\(\theta(k)\)</td>
+                        <td>参数向量</td>
+                        <td>自适应预测参数</td>
+                    </tr>
+                    <tr>
+                        <td>\(\phi(k)\)</td>
+                        <td>历史向量</td>
+                        <td>历史信号值向量</td>
+                    </tr>
+                    <tr>
+                        <td>\(\alpha\)</td>
+                        <td>学习率</td>
+                        <td>参数自适应速率因子</td>
+                    </tr>
+                    <tr>
+                        <td>\(k_v\)</td>
+                        <td>增益系数</td>
+                        <td>误差反馈增益因子</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <!-- Implementation Section -->
+        <section id="implementation" class="content-section">
+            <h2>算法实现</h2>
+            
+            <h3>初始化</h3>
+            <p>NADPCM算法需要正确的初始化才能正常工作：</p>
+            <div class="formula-card">
+                <p class="math">\(\phi(0) = [y_{\text{init}}, y_{\text{init}}, \dots]\)</p>
+                <p class="math">\(\theta(0) = [0, 0, \dots]\)</p>
+                <p class="math">\(\hat{y}(1) = \theta^T(0) \phi(0) - k_v e_q(0)\)</p>
+            </div>
+            
+            <h3>参数选择</h3>
+            <div class="comparison">
+                <div class="comparison-box">
+                    <h4>学习率 \(\alpha\)</h4>
+                    <ul>
+                        <li>典型值: 0.001 - 0.01</li>
+                        <li>过大: 参数振荡</li>
+                        <li>过小: 收敛缓慢</li>
+                        <li>自适应计算: \(\alpha = 1 / \|\phi(k-1)\|^2\)</li>
+                    </ul>
+                </div>
+                
+                <div class="comparison-box">
+                    <h4>增益系数 \(k_v\)</h4>
+                    <ul>
+                        <li>典型值: 0.001 - 0.1</li>
+                        <li>稳定性条件: \(k_v \leq \sqrt{1 - \alpha \|\phi\|^2}\)</li>
+                        <li>影响误差反馈强度</li>
+                        <li>平衡收敛速度与稳定性</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>伪代码实现</h3>
+            <div style="background: #2c3e50; color: #ecf0f1; padding: 20px; border-radius: 8px; font-family: monospace; margin: 20px 0;">
+                <div>// 初始化</div>
+                <div>phi = [init_value] * history_depth</div>
+                <div>theta = [0] * history_depth</div>
+                <div>y_hat[0] = init_value</div>
+                <br>
+                <div>for k in range(1, n_samples):</div>
+                <div>&nbsp;&nbsp;// 准备参数</div>
+                <div>&nbsp;&nbsp;prepare_parameters(phi, theta, k)</div>
+                <br>
+                <div>&nbsp;&nbsp;// 预测</div>
+                <div>&nbsp;&nbsp;y_hat[k] = dot(theta[k-1], phi[k-1]) - k_v * e_q[k-1]</div>
+                <br>
+                <div>&nbsp;&nbsp;// 计算并量化误差</div>
+                <div>&nbsp;&nbsp;e[k] = y[k] - y_hat[k]</div>
+                <div>&nbsp;&nbsp;e_q[k] = quantize(e[k], n_bits)</div>
+                <br>
+                <div>&nbsp;&nbsp;// 更新参数</div>
+                <div>&nbsp;&nbsp;theta[k] = theta[k-1] + alpha * phi[k-1] * e_q[k]</div>
+                <br>
+                <div>&nbsp;&nbsp;// 更新历史</div>
+                <div>&nbsp;&nbsp;phi[k] = [y_recon[k], phi[k-1][0:-1]]</div>
+            </div>
+        </section>
+        
+        <!-- Performance Section -->
+        <section id="performance" class="content-section">
+            <h2>性能分析</h2>
+            
+            <h3>典型性能指标</h3>
+            
+            <div class="performance-metrics">
+                <div class="metric-card">
+                    <h4><i>📊</i> 压缩比</h4>
+                    <p>8位编码: 2.0× (50%压缩)</p>
+                    <p>6位编码: 2.67× (62.5%压缩)</p>
+                    <p>4位编码: 4.0× (75%压缩)</p>
+                </div>
+                
+                <div class="metric-card">
+                    <h4><i>📉</i> 失真度</h4>
+                    <p>8位编码: 1.67%-2.04%</p>
+                    <p>6位编码: 3.64%-6.16%</p>
+                    <p>4位编码: 7.28%-14.44%</p>
+                </div>
+                
+                <div class="metric-card">
+                    <h4><i>⚡</i> 能耗节省</h4>
+                    <p>8位编码: 45.83%-48.61%</p>
+                    <p>6位编码: 57.29%-60.76%</p>
+                    <p>4位编码: 62.50%-74.98%</p>
+                </div>
+                
+                <div class="metric-card">
+                    <h4><i>⏱️</i> 计算复杂度</h4>
+                    <p>编码: 7050 FLOPS</p>
+                    <p>解码: 7425 FLOPS</p>
+                    <p>能耗: ~1.2μJ/样本</p>
+                </div>
+            </div>
+            
+            <h3>不同信号类型性能对比</h3>
+            <div style="overflow-x: auto; margin: 20px 0;">
+                <table class="symbol-table">
+                    <thead>
+                        <tr>
+                            <th>信号类型</th>
+                            <th>8位失真度</th>
+                            <th>6位失真度</th>
+                            <th>4位失真度</th>
+                            <th>最佳比特数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>合成数据</td>
+                            <td>1.67%</td>
+                            <td>3.64%</td>
+                            <td>7.28%</td>
+                            <td>8位</td>
+                        </tr>
+                        <tr>
+                            <td>河流流量</td>
+                            <td>2.65%</td>
+                            <td>6.08%</td>
+                            <td>16.45%</td>
+                            <td>9位</td>
+                        </tr>
+                        <tr>
+                            <td>音频数据</td>
+                            <td>2.04%</td>
+                            <td>6.16%</td>
+                            <td>14.44%</td>
+                            <td>8位</td>
+                        </tr>
+                        <tr>
+                            <td>地理物理</td>
+                            <td>1.02%</td>
+                            <td>4.22%</td>
+                            <td>13.42%</td>
+                            <td>8位</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3>频率响应特性</h3>
+            <p>NADPCM对不同频率信号的失真度变化：</p>
+            <div class="formula-card">
+                <p>低频信号（&lt;5Hz）: 失真度 &lt; 2%</p>
+                <p>中频信号（5-10Hz）: 失真度 2%-10%</p>
+                <p>高频信号（&gt;10Hz）: 失真度 &gt; 10%</p>
+                <p>临界点（20%失真）: 约14Hz（14位编码）</p>
+            </div>
+        </section>
+        
+        <footer>
+            <p>© 2023 无线传感器网络与智能传感器实验室 | NADPCM算法文档</p>
+            <p>本资料基于ESIGELEC智能传感器课程实验内容</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and sections
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Show corresponding section
+                const targetId = tab.getAttribute('data-target');
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
