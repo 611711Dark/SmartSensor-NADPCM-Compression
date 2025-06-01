@@ -12,12 +12,12 @@ from matplotlib import pyplot as plt
 import lab1_ndpcm_library
 
 ### General parameters
-n_bits = 13;
+n_bits = 12;
 n = 100; # number of iterations
-h_depth = 4; ## for now hardcode size of history to last 3 values
+h_depth = 3; ## for now hardcode size of history to last 3 values
 
 ### Generate sample ADC data 
-x = np.linspace( 0, 2*pi, n ) 
+x = np.linspace( 0, 1*pi, n ) 
 # useful to evaluate function at lots of points 
 f_original = np.sin(x)
 ## Scale to range 0-4095

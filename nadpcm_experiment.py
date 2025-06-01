@@ -1,4 +1,3 @@
-# 完整的NADPCM实验解决方案
 # Lab 1: Nonlinear Adaptive Pulse Coded Modulation-Based Compression (NADPCMC)
 
 import numpy as np
@@ -7,16 +6,13 @@ from collections import namedtuple
 from lab1_library import quantize
 from lab1_ndpcm_library import init, prepare_params_for_prediction, predict, calculate_error, reconstruct
 
-# ======================= 主实验代码 =======================
 def run_nadpcm_experiment():
-    """运行NADPCM实验"""
     
-    # 实验参数
-    n_bits_list = [4, 6, 8, 10, 13]  # 不同的编码位数
-    n = 100  # 迭代次数
-    h_depth = 3  # 历史深度
+    n_bits_list = [8, 10, 12, 14, 16]  
+    n = 100  
+    h_depth = 3  
     
-    # 生成测试信号
+    
     x = np.linspace(0, 2*np.pi, n)
     
     # 测试不同类型的信号
@@ -32,7 +28,6 @@ def run_nadpcm_experiment():
         results[signal_name] = {}
         
         for n_bits in n_bits_list:
-            print(f"\n处理信号: {signal_name}, 编码位数: {n_bits}")
             
             # 初始化发送端和接收端
             tx_data = init(n, h_depth, n_bits)
@@ -188,16 +183,45 @@ def find_20_percent_threshold(results):
                 distortion_fmt = smart_format(result['distortion'])
                 print(f"{signal_name} with {n_bits}-bit encoding: {distortion_fmt}% distortion")
 
+def print_distortion_table(results):
+    """打印不同比特数和信号类型下的失真率表格"""
+    print("\n" + "="*60)
+    print("DISTORTION RATE PER SIGNAL AND BIT DEPTH")
+    print("="*60)
+    
+    # 获取所有比特数并排序
+    n_bits_list = sorted(next(iter(results.values())).keys())
+    
+    # 表头
+    header = f"{'Signal/Bits':<20}" + "".join([f"{f'{bits}-bit':<15}" for bits in n_bits_list])
+    print(header)
+    print("-" * (20 + 15*len(n_bits_list)))
+    
+    # 每行数据
+    for signal_name in results.keys():
+        row = f"{signal_name:<20}"
+        for n_bits in n_bits_list:
+            distortion = results[signal_name][n_bits]['distortion']
+            # 格式化显示：科学计数法用于极大值，否则保留2位小数
+            if distortion > 1e5:
+                distortion_str = f"{distortion:.2e}%"
+            else:
+                distortion_str = f"{distortion:.2f}%"
+            row += f"{distortion_str:<15}"
+        print(row)
+
 if __name__ == "__main__":
     # 运行主实验
-    print("\n开始NADPCM实验...")
+    print("\nstart NADPCM experiment...")
     results = run_nadpcm_experiment()
     
     # 显示结果
     print_performance_table(results)
+    print_distortion_table(results)  # 新增的失真率表格
     find_20_percent_threshold(results)
     
     # 绘制图表
     plot_results(results)
     
     print("\n实验完成！结果已保存为图片文件。")
+
