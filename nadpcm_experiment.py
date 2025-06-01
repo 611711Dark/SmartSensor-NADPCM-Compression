@@ -77,7 +77,6 @@ def run_nadpcm_experiment():
 
 def plot_results(results):
     """绘制实验结果，显示所有比特数的重建信号和误差，使用科学计数法显示关键指标"""
-
     for signal_name, signal_results in results.items():
         fig = plt.figure(figsize=(18, 14))
         gs = fig.add_gridspec(3, 2)
@@ -143,7 +142,7 @@ def plot_results(results):
                 max_error = current_max
             if current_min < min_error:
                 min_error = current_min
-        
+
         # 设置Y轴范围基于原始信号振幅
         y_min = np.min(original_signal)
         y_max = np.max(original_signal)
@@ -156,7 +155,7 @@ def plot_results(results):
         ax2.legend(loc='upper right', fontsize=11, ncol=2)
         ax2.grid(True, alpha=0.3)
 
-        # ==================== 子图3: 压缩比vs失真度 ====================
+        # ==================== 子图3: 压缩比vs失真度（对数y轴）====================
         ax3 = fig.add_subplot(gs[2, 0])
         compression_ratios = [signal_results[nb]['compression_ratio'] for nb in n_bits_list]
         distortions = [signal_results[nb]['distortion'] for nb in n_bits_list]
@@ -166,25 +165,18 @@ def plot_results(results):
             print(f"警告: {signal_name} 的数据长度不一致")
             continue
 
-        # 动态判断是否需要科学计数法
-        max_distortion = max(distortions)
-        min_distortion = min(distortions)
-        distortion_range = max_distortion - min_distortion
+        # 创建主Y轴（对数坐标）
+        ax3.set_xlabel('Number of Encoding Bits', fontsize=14)
+        ax3.set_ylabel('Distortion (%) - Log Scale', fontsize=14, color='b')
+        ax3.set_title('Compression Ratio vs Distortion (Log Scale)', fontsize=16)
+        ax3.set_yscale('log')  # 设置y轴为对数坐标
+        ax3.grid(True, alpha=0.3, which='both')  # 添加对数网格
 
-        # 创建主Y轴
-        ax3.set_xlabel('Compression Ratio', fontsize=14)
-        ax3.set_ylabel('Distortion', fontsize=14, color='b')
-        ax3.set_title('Compression Ratio vs Distortion', fontsize=16)
-
-        # 绘制失真度
+        # 绘制失真度（对数坐标）
         line1 = ax3.plot(n_bits_list, distortions, 'bo-', linewidth=2, markersize=8,
                          label='Distortion')
 
-        # 设置Y轴范围
-        if distortion_range > 0:
-            ax3.set_ylim([min_distortion - distortion_range*0.1, max_distortion + distortion_range*0.1])
-
-        # 添加压缩比作为次Y轴
+        # 添加压缩比作为次Y轴（线性坐标）
         ax3b = ax3.twinx()
         ax3b.set_ylabel('Compression Ratio', fontsize=14, color='r')
         line2 = ax3b.plot(n_bits_list, compression_ratios, 'rs-', linewidth=2, markersize=8,
@@ -209,14 +201,7 @@ def plot_results(results):
                          fontsize=9,
                          bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.8))
 
-        ax3.grid(True, alpha=0.3)
-
-        # 根据需要设置科学计数法
-        if max_distortion > 1000 or min_distortion < 0.001:
-            ax3.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
-            ax3.yaxis.major.formatter.set_powerlimits((0, 0))
-
-        # ==================== 子图4: 平均误差vs编码位数 ====================
+        # ==================== 子图4: 平均误差vs编码位数（对数y轴）====================
         ax4 = fig.add_subplot(gs[2, 1])
         avg_errors = [signal_results[nb]['avg_error'] for nb in n_bits_list]
 
@@ -225,12 +210,13 @@ def plot_results(results):
             print(f"警告: {signal_name} 的平均误差数据长度不一致")
             continue
 
-        # 动态判断是否需要科学计数法
-        max_avg_error = max(avg_errors)
-        min_avg_error = min(avg_errors)
-        error_range = max_avg_error - min_avg_error
+        # 创建散点图（对数y轴）
+        ax4.set_xlabel('Number of Encoding Bits', fontsize=14)
+        ax4.set_ylabel('Average Error - Log Scale', fontsize=14)
+        ax4.set_title('Average Error vs Encoding Bits (Log Scale)', fontsize=16)
+        ax4.set_yscale('log')  # 设置y轴为对数坐标
+        ax4.grid(True, alpha=0.3, which='both')  # 添加对数网格
 
-        # 创建散点图
         scatter = ax4.scatter(n_bits_list, avg_errors, c=n_bits_list,
                              cmap='viridis', s=150, alpha=0.8)
 
@@ -240,12 +226,9 @@ def plot_results(results):
 
         # 添加数据点标签
         for i, nb in enumerate(n_bits_list):
-            # 根据数值大小选择合适的显示格式
-            if abs(avg_errors[i]) > 1000 or abs(avg_errors[i]) < 0.001:
-                label = f'{avg_errors[i]:.2e}'
-            else:
-                label = f'{avg_errors[i]:.6f}'
-
+            # 使用科学计数法显示平均误差
+            label = f'{avg_errors[i]:.2e}'
+            
             ax4.annotate(label,
                          (nb, avg_errors[i]),
                          xytext=(0, 12),
@@ -254,26 +237,19 @@ def plot_results(results):
                          fontsize=10,
                          bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.8))
 
-        ax4.set_xlabel('Number of Encoding Bits', fontsize=14)
-        ax4.set_ylabel('Average Error', fontsize=14)
-        ax4.set_title('Average Error vs Encoding Bits', fontsize=16)
-        ax4.grid(True, alpha=0.3)
-
-        # 设置Y轴范围
-        if error_range > 0:
-            ax4.set_ylim([min_avg_error - error_range*0.15, max_avg_error + error_range*0.15])
-
-        # 根据需要设置科学计数法
-        if max_avg_error > 1000 or min_avg_error < 0.001:
-            ax4.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
-            ax4.yaxis.major.formatter.set_powerlimits((0, 0))
-
         # 添加整体统计信息
+        min_distortion = min(distortions) if distortions else 0
+        max_distortion = max(distortions) if distortions else 0
+        min_avg_error = min(avg_errors) if avg_errors else 0
+        max_avg_error = max(avg_errors) if avg_errors else 0
+        min_comp_ratio = min(compression_ratios) if compression_ratios else 0
+        max_comp_ratio = max(compression_ratios) if compression_ratios else 0
+        
         stats_text = (
             f"Statistics for {signal_name}:\n"
             f"Distortion Range: {min_distortion:.2e} - {max_distortion:.2e}\n"
             f"Avg Error Range: {min_avg_error:.2e} - {max_avg_error:.2e}\n"
-            f"Compression Ratios: {min(compression_ratios):.2f} - {max(compression_ratios):.2f}"
+            f"Compression Ratios: {min_comp_ratio:.2f} - {max_comp_ratio:.2f}"
         )
         fig.text(0.5, 0.01, stats_text, fontsize=12, ha='center',
                  bbox=dict(facecolor='white', alpha=0.8))
