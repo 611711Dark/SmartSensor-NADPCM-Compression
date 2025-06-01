@@ -12,12 +12,12 @@ from matplotlib import pyplot as plt
 import lab1_ndpcm_library
 
 ### General parameters
-n_bits = 12;
+n_bits = 16;
 n = 100; # number of iterations
 h_depth = 3; ## for now hardcode size of history to last 3 values
 
 ### Generate sample ADC data 
-x = np.linspace( 0, 1*pi, n ) 
+x = np.linspace( 0, 2*pi, n ) 
 # useful to evaluate function at lots of points 
 f_original = np.sin(x)
 ## Scale to range 0-4095
@@ -40,7 +40,6 @@ for k in range (1, n-1):
     y_hat = lab1_ndpcm_library.predict(tx_data, k)
     eq = lab1_ndpcm_library.calculate_error(tx_data, k, f[k])
     y_rec = lab1_ndpcm_library.reconstruct(tx_data, k)
-    
 
     e[k] = f[k] - y_hat;  # Save 
     ## communication (e.g. inject error)
@@ -52,6 +51,8 @@ for k in range (1, n-1):
     y_hat_rx = lab1_ndpcm_library.predict(rx_data, k)
     # No need to calculate ERROR - since it was received
     y_rec_rx = lab1_ndpcm_library.reconstruct(rx_data, k)
+
+
 # print(tx_data)
 # print(rx_data)
 e_all = np.abs(rx_data.y_recreated - f)
@@ -85,26 +86,4 @@ plt.plot(tt, e, label="true error")
 plt.legend()
 plt.savefig("lab1.png")
 
-plt.show()
-
-# Calculate distortion (percentage error)
-distortion = np.abs((rx_data.y_recreated - f) / f) * 100
-average_distortion = np.mean(distortion)
-print(f"Average Distortion: {average_distortion:.2f}%")
-
-# Calculate compression ratio
-original_bits = 16 * n  # Assuming original data is 16-bit ADC values
-compressed_bits = n_bits * n
-compression_ratio = original_bits / compressed_bits
-print(f"Compression Ratio: {compression_ratio:.2f}:1 (Original: {original_bits} bits, Compressed: {compressed_bits} bits)")
-
-# Add distortion plot
-plt.figure()
-plt.plot(tt, distortion, label="Distortion (%)")
-plt.xlabel("Iteration")
-plt.ylabel("Distortion (%)")
-plt.title("Reconstruction Distortion")
-plt.legend()
-plt.grid(True)
-plt.savefig("distortion.png")
 plt.show()

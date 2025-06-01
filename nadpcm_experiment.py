@@ -8,7 +8,7 @@ from lab1_ndpcm_library import init, prepare_params_for_prediction, predict, cal
 
 def run_nadpcm_experiment():
     
-    n_bits_list = [8, 10, 12, 14, 16]  
+    n_bits_list = [8, 9, 10, 11, 12, 13, 14, 15, 16]  
     n = 100  
     h_depth = 3  
     
@@ -132,6 +132,7 @@ def plot_results(results):
         plt.tight_layout()
         plt.savefig(f'nadpcm_results_{signal_name}.png', dpi=300, bbox_inches='tight')
         plt.show()
+
 def print_performance_table(results):
     """打印性能对比表"""
     print("\n" + "="*80)
