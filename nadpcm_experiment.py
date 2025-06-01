@@ -9,7 +9,7 @@ import matplotlib.ticker as mticker
 
 def run_nadpcm_experiment():
     
-    n_bits_list = [10, 12, 14, 16]  
+    n_bits_list = [8, 12, 13, 14, 16]  
     n = 100  
     h_depth = 3  
     
