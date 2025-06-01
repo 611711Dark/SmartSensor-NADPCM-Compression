@@ -1,6 +1,6 @@
 # NADPCM Compression Algorithm Experiment
 
-## 目录索引
+## Index
 - [中文 README](README_cn.md)
 
 ## English README
