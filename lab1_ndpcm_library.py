@@ -87,8 +87,7 @@ def predict(data_bloc, k):
 
         # Initial prediction - use first sample value or zero
     if k == 0:
-        data_bloc.y_hat[k] = data_bloc.y_recreated[0] if k == 0 else 0
-    
+        data_bloc.y_hat[k] = 0
         # Main prediction equation:
         # ŷ(k) = θ(k-1)•φ(k-1) - k_v * eq(k-1)
     #if (k > 0):

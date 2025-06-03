@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 import lab1_ndpcm_library
 
 ### General parameters
-n_bits = 12;
+n_bits = 4;
 n = 100; # number of iterations
 h_depth = 3; ## for now hardcode size of history to last 3 values
 
@@ -25,7 +25,7 @@ f_original = np.sin(x)
 ## Scale to range 0-100
 # f = (f_original+1)*100
 ## Scale to range 0-100
-f = (f_original+1)*10000
+f = (f_original+1)*pow(2,n_bits)
 
 
 tx_data = lab1_ndpcm_library.init(n, h_depth, n_bits)
