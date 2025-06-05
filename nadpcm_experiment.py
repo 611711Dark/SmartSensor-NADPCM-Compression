@@ -9,26 +9,27 @@ import matplotlib.ticker as mticker
 
 def run_nadpcm_experiment():
     
-    n_bits_list = [8, 12, 13, 14, 16]  
-    n = 300  
+    n_bits_list = [8, 10, 12, 14, 16]  
+    n = 200  
     h_depth = 3  
     
+    original_signal = 12
     
     x = np.linspace(0, 2*np.pi, n)
     
     # 测试不同类型的信号
     #Type,Frequency
     signals = {
-        'slow_sine': 2,  # 慢变正弦
-        'fast_sine': 5,  # 快变正弦
-        'very_fast_sine': 10,  # 很快变正弦
+        'slow_sine': 1,  # 慢变正弦
+        'fast_sine': 3,  # 快变正弦
+        'very_fast_sine': 5,  # 很快变正弦
     }
     results = {}
     for signal_name, freq in signals.items():
         results[signal_name] = {}
         
         for n_bits in n_bits_list:
-            f = (np.sin(freq*x) + 1) * pow(2, n_bits_list[round(len(n_bits_list)/2)-1] - 1)
+            f = (np.sin(freq*x) + 1) * pow(2, 12 - 1)
             # 初始化发送端和接收端
             tx_data = init(n, h_depth, n_bits)
             rx_data = init(n, h_depth, n_bits)
@@ -58,7 +59,7 @@ def run_nadpcm_experiment():
             distortion = np.mean(np.abs((rx_data.y_recreated - f) / (f + 1e-10)) * 100)
             
             # 计算压缩比
-            original_bits = 16 * n  # 假设原始数据16位
+            original_bits = 12 * n  
             compressed_bits = n_bits * n
             compression_ratio = original_bits / compressed_bits
             
@@ -94,7 +95,7 @@ def plot_results(results):
         t = np.arange(n)
 
         # 绘制原始信号
-        ax1.plot(t, original_signal, 'k-', label='Original', linewidth=3, alpha=0.8)
+        ax1.plot(t, original_signal, 'k-', label='Original-14bit', linewidth=3, alpha=0.8)
 
         # 绘制所有比特数的重建信号
         colors = plt.cm.viridis(np.linspace(0, 1, len(n_bits_list)))
@@ -128,7 +129,7 @@ def plot_results(results):
         for i, bits in enumerate(n_bits_list):
             reconstructed = signal_results[bits]['reconstructed_signal']
             reconstruction_error = reconstructed - original_signal
-            ax2.plot(t, reconstruction_error,
+            ax2.plot(t, reconstruction_error,'--',
                      color=colors[i],
                      linewidth=1.2,
                      alpha=0.8,
