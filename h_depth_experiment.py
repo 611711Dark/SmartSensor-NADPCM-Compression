@@ -13,8 +13,8 @@ def run_h_depth_experiment():
     """运行历史深度(h_depth)参数实验"""
     # 固定参数
     n_bits = 14
-    n = 100  
-    frequency = 2.0 
+    n = 150  
+    frequency = 3.0 
 
     h_depths = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15]
 
