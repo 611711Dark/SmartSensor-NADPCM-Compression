@@ -4,7 +4,7 @@ from lab1_ndpcm_library import init, prepare_params_for_prediction, predict, cal
 
 def format_large_number(value, precision=2):
     """格式化特大值为科学计数法或常规浮点数"""
-    if abs(value) > 1e5:
+    if abs(value) > 1e6:
         return f"{value:.{precision}e}"
     else:
         return f"{value:.{precision}f}"
@@ -34,7 +34,7 @@ def run_h_depth_experiment():
     for h_depth in h_depths:
         # 生成正弦信号
         x = np.linspace(0, 2*np.pi, n)
-        f = (np.sin(frequency * x) + 1) * 10000
+        f = (np.sin(frequency * x) + 1) * pow(2, n_bits - 1)
 
         # 初始化发送端和接收端
         tx_data = init(n, h_depth, n_bits)

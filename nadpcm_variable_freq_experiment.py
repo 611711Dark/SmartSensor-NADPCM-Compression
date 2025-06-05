@@ -5,7 +5,7 @@ from lab1_ndpcm_library import init, prepare_params_for_prediction, predict, cal
 def run_variable_frequency_experiment():
     """运行变频率实验，直到失真度超过20%"""
     # 固定参数
-    n_bits = 14
+    n_bits = 16
     n = 100  # 采样点数
     h_depth = 3  # 历史深度
     
@@ -19,8 +19,8 @@ def run_variable_frequency_experiment():
     
     # 初始频率和步长
     frequency = 1.0
-    freq_step = 0.5
-    max_freq = 20.0  # 最大频率限制
+    freq_step = 0.1
+    max_freq = 10.0  # 最大频率限制
     
     print("Starting variable frequency experiment...")
     print(f"{'Frequency':<10} {'Distortion (%)':<15} {'Avg Error':<15}")
@@ -29,7 +29,7 @@ def run_variable_frequency_experiment():
     while frequency <= max_freq:
         # 生成正弦信号
         x = np.linspace(0, 2*np.pi, n)
-        f = (np.sin(frequency * x) + 1) * 10000
+        f = (np.sin(frequency * x) + 1) * pow(2, n_bits - 1)
         
         # 初始化发送端和接收端
         tx_data = init(n, h_depth, n_bits)

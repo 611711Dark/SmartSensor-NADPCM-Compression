@@ -10,26 +10,25 @@ import matplotlib.ticker as mticker
 def run_nadpcm_experiment():
     
     n_bits_list = [8, 12, 13, 14, 16]  
-    n = 100  
+    n = 300  
     h_depth = 3  
     
     
     x = np.linspace(0, 2*np.pi, n)
     
     # 测试不同类型的信号
+    #Type,Frequency
     signals = {
-        'slow_sine': (np.sin(2*x) + 1) * 1000,  # 慢变正弦
-        'fast_sine': (np.sin(5*x) + 1) * 1000,  # 快变正弦
-        'very_fast_sine': (np.sin(10*x) + 1) * 1000,  # 很快变正弦
+        'slow_sine': 2,  # 慢变正弦
+        'fast_sine': 5,  # 快变正弦
+        'very_fast_sine': 10,  # 很快变正弦
     }
-    
     results = {}
-    
-    for signal_name, f in signals.items():
+    for signal_name, freq in signals.items():
         results[signal_name] = {}
         
         for n_bits in n_bits_list:
-            
+            f = (np.sin(freq*x) + 1) * pow(2, n_bits_list[round(len(n_bits_list)/2)-1] - 1)
             # 初始化发送端和接收端
             tx_data = init(n, h_depth, n_bits)
             rx_data = init(n, h_depth, n_bits)
