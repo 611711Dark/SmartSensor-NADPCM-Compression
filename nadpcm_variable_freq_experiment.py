@@ -7,7 +7,7 @@ def run_variable_frequency_experiment():
     # 固定参数
     n_bits = 16
     n = 100  # 采样点数
-    h_depth = 3  # 历史深度
+    h_depth = 6  # 历史深度
     
     # 存储结果
     results = {
