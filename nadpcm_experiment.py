@@ -95,7 +95,7 @@ def plot_results(results):
         t = np.arange(n)
 
         # 绘制原始信号
-        ax1.plot(t, original_signal, 'k-', label='Original-14bit', linewidth=3, alpha=0.8)
+        ax1.plot(t, original_signal, 'k-', label='Original-12bit', linewidth=3, alpha=0.8)
 
         # 绘制所有比特数的重建信号
         colors = plt.cm.viridis(np.linspace(0, 1, len(n_bits_list)))
